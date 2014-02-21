@@ -24,24 +24,18 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * TODO:
- * log to file (and console)
  * - accept --instructions-file option
- * - accept --repository-xml option
- * - accept --repository-url option (mirroring {@link org.apache.jackrabbit.commons.JcrUtils#getRepository(String uri)})
  * instruction file format:
  * rm path /content/dam
  * rm xpath /jcr:root/content/dam//*
  * rm sql-2 SELECT * ...
  * datastore-gc
- * tar-optimize
  * <p/>
  * how to express the constraint that an asset may not be referenced?
  * rm xpath /jcr:root/content/dam/geometrixx//*[@jcr:primaryType='dam:Asset' and @jcr:content/jcr:lastModified > xs:dateTime('2012-06-...')] with empty xpath /jcr:root/content/geometrixx/element(*, cq:Page)[jcr:contains(jcr:content, '$path')]
  */
 public class Main {
-    /**
-     * The logger.
-     */
+
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(Main.class);
 
     private static final Logger ROOT_LOGGER = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
