@@ -11,6 +11,7 @@ import joptsimple.OptionSpec;
 import net.distilledcode.jackrabbit.pm.commands.AbstractCommand;
 import net.distilledcode.jackrabbit.pm.commands.ConsistencyCheck;
 import net.distilledcode.jackrabbit.pm.commands.JackrabbitConsistencyCheck;
+import net.distilledcode.jackrabbit.pm.commands.Noop;
 import net.distilledcode.jackrabbit.pm.commands.Remove;
 import net.distilledcode.jackrabbit.pm.commands.TarOptimization;
 import ch.qos.logback.classic.Logger;
@@ -50,6 +51,12 @@ public class Main {
         parser.accepts("check", "Run custom consistency check.");
         parser.accepts("jr-check", "Run Jackrabbit PM consistency check.");
         parser.accepts("optimize", "Run TarPM optimization (only available on TarPM).");
+        parser.accepts("noop", "Start and stop the repository. May be used trigger PM " +
+                "specific initialization behaviour.");
+        final OptionSpec<String> remove = parser.accepts("remove")
+                .withRequiredArg()
+                .withValuesSeparatedBy(',')
+                .describedAs("Comma separated list of paths to recursively remove.");
         final OptionSpec<File> repoHome = parser
                 .accepts("repository", "Path to the repository home directory.")
                 .withRequiredArg()
@@ -59,11 +66,6 @@ public class Main {
                 .withOptionalArg()
                 .describedAs("Name of the persistence manager's workspace.")
                 .defaultsTo("crx.default");
-        final OptionSpec<String> remove = parser
-                .accepts("remove")
-                .withRequiredArg()
-                .withValuesSeparatedBy(',')
-                .describedAs("Comma separated list of paths to recursively remove.");
         final OptionSpec<String> log = parser
                 .accepts("log")
                 .withRequiredArg()
@@ -93,11 +95,12 @@ public class Main {
             } else if (optionSet.hasArgument("remove")) {
                 final List<String> paths = remove.values(optionSet);
                 command = new Remove(paths);
+            } else if (optionSet.has("noop")) {
+                command = new Noop();
             } else {
                 parser.printHelpOn(System.out);
                 return;
             }
-
 
             final PMExecutionContext executionContext =
                     PMExecutionContext.create(repositoryHome.getAbsolutePath(), workspaceName);
