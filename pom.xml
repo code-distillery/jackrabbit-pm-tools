@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
      
     <groupId>net.distilledcode.jackrabbit</groupId>
-    <artifactId>jackrabbot-pm-tools</artifactId>
+    <artifactId>jackrabbit-pm-tools</artifactId>
     <version>0.1-SNAPSHOT</version>
 
     <name>Persistence Manager Tools for Apache Jackrabbit</name>
