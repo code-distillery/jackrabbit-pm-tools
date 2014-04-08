@@ -5,12 +5,14 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.FileAppender;
+import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import net.distilledcode.jackrabbit.pm.commands.AbstractCommand;
 import net.distilledcode.jackrabbit.pm.commands.ConsistencyCheck;
 import net.distilledcode.jackrabbit.pm.commands.JackrabbitConsistencyCheck;
+import net.distilledcode.jackrabbit.pm.commands.PrintList;
 import net.distilledcode.jackrabbit.pm.commands.Noop;
 import net.distilledcode.jackrabbit.pm.commands.Remove;
 import net.distilledcode.jackrabbit.pm.commands.TarOptimization;
@@ -45,25 +47,35 @@ public class Main {
         parser.accepts("check", "Run custom consistency check.");
         parser.accepts("jr-check", "Run Jackrabbit PM consistency check.");
         parser.accepts("optimize", "Run TarPM optimization (only available on TarPM).");
-        parser.accepts("noop", "Start and stop the repository. May be used trigger PM " +
+        parser.accepts("noop", "Start and stop the repository. May be used to trigger PM " +
                 "specific initialization behaviour.");
-        final OptionSpec<String> remove = parser.accepts("remove")
+        final OptionSpec<String> remove = parser.accepts("remove",
+                "Comma separated list of paths to recursively remove.")
                 .withRequiredArg()
                 .withValuesSeparatedBy(',')
-                .describedAs("Comma separated list of paths to recursively remove.");
+                .describedAs("path[,path]");
+        final OptionSpec<String> list = parser.accepts("list",
+                "List all paths under a given list of parent paths (comma separated).")
+                .withRequiredArg()
+                .withValuesSeparatedBy(',')
+                .describedAs("path[, path]");
+        final OptionSpec<File> outputFile = parser.accepts("outputFile",
+                    "The filename or path of the file, to which output should be written.")
+                .withRequiredArg()
+                .describedAs("path").ofType(File.class);
         final OptionSpec<File> repoHome = parser
                 .accepts("repository", "Path to the repository home directory.")
                 .withRequiredArg()
                 .ofType(File.class);
         final OptionSpec<String> wsName = parser
-                .accepts("workspace")
+                .accepts("workspace", "Name of the persistence manager's workspace.")
                 .withOptionalArg()
-                .describedAs("Name of the persistence manager's workspace.")
+                .describedAs("workspace name")
                 .defaultsTo("crx.default");
         final OptionSpec<String> log = parser
-                .accepts("log")
+                .accepts("log", "Log level: debug, info, warn or error")
                 .withRequiredArg()
-                .describedAs("Log level: debug, info, warn or error")
+                .describedAs("debug|info|warn|error")
                 .defaultsTo("info");
 
 
@@ -86,6 +98,10 @@ public class Main {
                 command = new JackrabbitConsistencyCheck();
             } else if (optionSet.has("optimize")) {
                 command = new TarOptimization();
+            } else if (optionSet.hasArgument("list")) {
+                final List<String> paths = list.values(optionSet);
+                final File file = outputFile.value(optionSet);
+                command = new PrintList(file, paths);
             } else if (optionSet.hasArgument("remove")) {
                 final List<String> paths = remove.values(optionSet);
                 command = new Remove(paths);
@@ -98,14 +114,17 @@ public class Main {
 
             final PMExecutionContext executionContext =
                     PMExecutionContext.create(repositoryHome.getAbsolutePath(), workspaceName);
+            final String name = command.getClass().getSimpleName();
+            final long startTime = System.currentTimeMillis();
             try {
-                LOG.info("Running command {} now.", command.getClass().getSimpleName());
+                LOG.info("Running command {} now.", name);
                 command.execute(executionContext);
             } catch (Exception e) {
                 LOG.error("Unexpected exception: ", e);
             } finally {
                 TimeUnit.SECONDS.sleep(5);
                 executionContext.dispose();
+                LOG.info("Finished running command {} in {}ms.", name, System.currentTimeMillis() - startTime);
             }
         } catch (Exception e) {
             LOG.error("Something went horribly wrong: ", e);

@@ -63,16 +63,10 @@ public class ConsistencyCheck extends AbstractCommand {
 
         allNodeIds.remove(parentState.getNodeId());
 
-        for (ChildNodeEntry cne : parentState.getChildNodeEntries()) {
-            final NodeId childId = cne.getId();
-            try {
-                final NodeState childNodeState = pm.load(childId);
-                final String childPath = getPath(pm, childNodeState);
-                assertParent(pm, parentState, childNodeState, changeLog, childPath);
-                checkChildren(pm, childNodeState, changeLog, allNodeIds, nodeCount);
-            } catch (NoSuchItemStateException nsise) {
-                LOG.info("skipping non existing node {} (parent: {})", childId, path);
-            }
+        for (final NodeState childNodeState : getChildNodeStates(pm, parentState)) {
+            final String childPath = getPath(pm, childNodeState);
+            assertParent(pm, parentState, childNodeState, changeLog, childPath);
+            checkChildren(pm, childNodeState, changeLog, allNodeIds, nodeCount);
         }
     }
 
